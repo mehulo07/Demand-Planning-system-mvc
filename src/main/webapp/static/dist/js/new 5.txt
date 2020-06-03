@@ -1,0 +1,401 @@
+ $('#CurrentReportGrid').bootstrapTable('load',{
+			url: 'CurrentProjectGrid',
+		});
+		
+		
+		
+$(document).ready(function(){
+	
+	currentReportdetailGrid();
+	initAutocomplete();
+
+	
+	$('#reportDetailDiv').bootstrapTable(
+			{
+				exportTypes:[ 'excel']
+			}
+	);
+	
+	$('#clear').on('click' , function(){
+			
+		 $('#projectStartDate').val("");
+		 $('#projectEndDate').val("");
+		 $('#currentProjectName').val("");
+		 $('#projectStatus').val("");
+		 $('#validate').validator('destroy');
+		 /*$('#reportDetailDiv').bootstrapTable('load',{
+				url: 'CurrentProject',
+			 });*/
+		 $("#CurrentReportGrid").jqGrid('setGridParam',
+					{		
+						postData:{
+							startDate: "", 
+							endDate : "",
+							projectName : "",
+							projectStatus : ""
+							
+						},
+						datatype:'json',
+						}
+				).trigger("reloadGrid");
+		
+	});
+	
+	
+	$("#btnExport").on("click", function(){
+    	tableToExcel("projectDetailsTbl", "ProjectDetailsReport.xls");
+	});
+	
+	
+//	$('#search').click(function(){
+//		
+//		var Start_date = $('#projectStartDate').val();
+//		var End_date = $('#projectEndDate').val();
+//		
+//	if((Start_date != "" && Start_date!=null) && (End_date != "" && End_date != null)){
+//		
+//			$.ajax({
+//				type: "GET",
+//				url: "filterBy",
+//				dataType: "JSON",
+//				data: { startDate: Start_date, endDate : End_date},  
+//				success: function(JSONdata){
+//				
+//                   /*  var message = JSONdata.message;
+//                     alert(message);
+//                         if(JSONdata.expire != undefined &&  JSONdata.expire == "Expire"){
+//                             window.location=domain+"/sessionExpire";
+//                         }*/
+//					
+//				console.log(JSON.stringify(JSONdata));
+//					$("#reportDetailDiv > tbody").html("");
+//					var j = 1;
+//					$.each(JSONdata.projectReport, function(key,value) {
+//						console.log(JSON.stringify(value));  
+//						var projectDetails = $('#reportDetailDiv tbody');
+//						
+//						/*$("#reportDetailDiv").bootstrapTable('insertRow', {
+//					        index: j++,
+//					        row:value
+//					      })*/
+//						
+//						var table = '<tr><td>'+(j++)+'</td><td>'+ value.projectName +'</td><td>' 
+//						+ value.version_name +'</td><td>'
+//						+ value.description +'</td><td>'
+//						+ value.projectStartDate + '</td>';
+//						
+//						if(value.within7dayFlag === false){
+//							table+='<td class="oldDate">'+ value.projectEndDate + '</td><td>';
+//						}else{
+//							table+='<td>'+ value.projectEndDate + '</td><td>';
+//						}
+//						table+=  value.businessOwner +'</td><td>'
+//						+ value.department + '</td><td>'
+//						+ value.version_Status2 +'</td><td>'
+//						+ value.projectStatusDate +'</td><td>'
+//						+ value.notes +'</td><td>'
+//						+ value.allocated_hours +'</td><td>'
+//						+ value.totalSpentHours +'</td><td>'
+//						+ value.progressPercents +'</td><td>';
+//						projectDetails.append(table);
+//					}); 
+//				//	$(".pagination-info").text("Showing 1 to "+JSONdata.length+" of "+JSONdata.length+" rows")
+//				
+//				}
+//			});
+//		}
+//	else{
+//		$('#validate').validator('validate');
+//		return 'Please enter date!';
+//	}
+//		
+//	});
+	
+	$('#projectStartDateDiv').datetimepicker({
+		format: 'DD-MMM-YYYY',
+		sideBySide: true,
+		icons: {
+                time: "fa fa-clock-o",
+                date: "fa fa-calendar",
+                up: "fa fa-arrow-up",
+                down: "fa fa-arrow-down"
+            },
+    });
+	
+	$('#projectEndDateDiv').datetimepicker({
+		format: 'DD-MMM-YYYY',
+		sideBySide: true,
+		icons: {
+                time: "fa fa-clock-o",
+                date: "fa fa-calendar",
+                up: "fa fa-arrow-up",
+                down: "fa fa-arrow-down"
+            },
+    });
+	
+});
+
+function initAutocomplete(){
+	
+	$("#currentProjectName").autocomplete({
+		source : function(request, response) {
+            if($.trim($(this.element).val())=="" || $(this.element).val().length < 1){
+                return;
+            }
+            $.ui.autocomplete.prototype._renderMenu = function(ul, items) {
+                var self = this;   
+                ul.append("<div class='ui-autocomplete-header'><table width=100%><tr><th class='text-center' width=50% >Name</th><th class='text-center' width=40% style='display: none;'>Identifier</th><th class='text-center' width=10%  style='display: none;' >Status</th></tr></table></div>");
+                $.each(items, function(index, item) {
+                    self._renderItem(ul, item);
+                });
+            };
+            $.getJSON("searchProject", {
+            	projectQry : $.trim($(this.element).val()),
+            }, function(result){
+            	var d = result.data;
+            	response(d);
+            }); 
+        },
+        minLength : 1,
+    	focus : function(event, ui) {
+            return false;
+        },
+        select : function(event, ui) {
+        	$("#currentProjectName").val(ui.item.name);
+        	$("#projId").val(ui.item.projectId);
+        	return false;
+        }
+    }).data( "ui-autocomplete" )._renderItem = function( ul, item ) {
+		return $("<li></li>" )
+			.data("ui-autocomplete-item", item)
+	       .append( "<a  class='div_block'><table width=100%><tr><td width=50% >" + item.name + "</td></tr></table></a>" )
+	       .appendTo(ul);
+    };    
+    
+    $("#projectStatus").autocomplete({
+		source : function(request, response) {
+            if($.trim($(this.element).val())=="" || $(this.element).val().length < 1){
+                return;
+            }
+            $.ui.autocomplete.prototype._renderMenu = function(ul, items) {
+                var self = this;   
+                ul.append("<div class='ui-autocomplete-header'><table width=100%><tr><th class='text-center' width=50% >Status</th><th class='text-center' width=40% style='display: none;'>Identifier</th><th class='text-center' width=10%  style='display: none;' >Status</th></tr></table></div>");
+                $.each(items, function(index, item) {
+                    self._renderItem(ul, item);
+                });
+            };
+            $.getJSON("searchVersionStatus", {
+            	projectQry : $.trim($(this.element).val()),
+            }, function(result){
+            	var d = result.data;
+            	response(d);
+            }); 
+        },
+        minLength : 1,
+    	focus : function(event, ui) {
+            return false;
+        },
+        select : function(event, ui) {
+        	$("#projectStatus").val(ui.item.version_Status2);
+        	//$("#projId").val(ui.item.projectId);
+        	return false;
+        }
+    }).data( "ui-autocomplete" )._renderItem = function( ul, item ) {
+		return $("<li></li>" )
+			.data("ui-autocomplete-item", item)
+	       .append( "<a  class='div_block'><table width=100%><tr><td width=50% >" + item.version_Status2 + "</td></tr></table></a>" )
+	       .appendTo(ul);
+    };
+    
+}
+	
+
+
+function ExportData()
+{
+	var frm = document.createElement("Form");
+	frm.action = "getExportData";
+	frm.method = "get";
+	$(frm).appendTo('body');
+	frm.submit();
+}
+
+function currentReportdetailGrid(){
+	
+	$("#CurrentReportGrid").jqGrid({
+	   	url: "CurrentProjectGrid",
+		datatype: 'json',
+		mtype: 'POST',
+	   	colNames:['Project', 'Version', 'Description','Change Control','Start Date','End Date','Business Owner','Department','Responsible Person','Version Status','Last Updated Date','Notes','Allocated Time','Spent Time','Progress','flag','Projects Sites Under','Projects Impact on Business'],
+		colModel:[
+	   		{name:'projectName',index:'projectName', width:300 ,align: 'left',frozen:true,scroll: true},
+	   		{name:'version_name',index:'version_name', width:200,align: 'left', frozen:true,scroll: true,hidden : false},
+	   		{name:'description',index:'description', width:400,frozen:true,scroll: true},
+	   		{name:'changeControl',index:'changeControl', width:150,frozen:false,scroll: true},
+	   		{name:'projectStartDate',index:'projectStartDate', width:'120',align: 'center',scroll: true,frozen:false},
+	   		{name:'projectEndDate',index:'projectEndDate', width:'120', align: 'center',scroll: true,frozen:false,formatter:fontColorFormat},
+	   		{name:'businessOwner',index:'businessOwner', width:'150', align: 'left',scroll: true,frozen:false},
+	   		{name:'department',index:'department', width:'120', align: 'left',scroll: true,frozen:false},
+	   		{name:'responsiblePerson',index:'responsiblePerson', width:'150', align: 'left',scroll: true,frozen:false},
+//	   		{name:'projectStatus',index:'projectStatus', width:100, align: 'right'},
+	   		{name:'version_Status2',index:'version_Status2', width:'120',frozen:false, align: 'left',scroll: true},
+	   		{name:'projectStatusDate',index:'projectStatusDate', width:'120',frozen:false, align: 'center',scroll: true},
+	   		
+	   		{name:'notes',index:'notes', width:'120', align: 'left',scroll: true,frozen:false},
+	   		{name:'allocated_hours',index:'allocated_hours', width:'120', align: 'right',frozen:false,scroll: true},
+	   		{name:'totalSpentHours',index:'totalSpentHours', width:'120',align: 'right',scroll: true,frozen:false},
+	   		{name:'progressPercents',index:'progressPercents', width:'120', align: 'right',scroll: true,frozen:false},
+	   		{name:'within7dayFlag',index:'within7dayFlag', width:'120', align: 'left',hidden:true,scroll: true,frozen:false},
+	   		{name:'projectsSitesUnder', index:'projectsSitesUnder', width:'180', align:'left', frozen: false},
+	   		{name:'projectImpactonBusiness', index :'projectImpactonBusiness', width:'200', align:'left', frozen: false}
+	   		
+	   	],
+	   	postData: { 
+	   		"Time":new Date().getTime(),
+		},
+		global:false,
+		rowNum:100,
+	   	rowList:[100,200,300,400,500],	
+	   	height:600,
+	   	autowidth: true,
+		rownumbers: true,
+		rownumWidth:50,
+		shrinkToFit: false,
+		frozenColumns: true,
+		pager:'#CurrentReportGridPager',
+	    caption:'Current Project Details',
+
+		
+		grouping : true,
+		groupingView: {
+			groupField:["projectName", "version_name"],
+			groupColumnShow:[true,true],
+			groupText:[
+				"Project :<b>{0}</b>",
+				"Version :<b>{0}</b>"
+				],
+			groupOrder:["desc","desc"],
+			groupSummary:[true, false],
+			groupSummaryPos:['header', 'header'],
+			groupCollapse:true,
+			groupDataSorted:true,
+			
+		},
+		"sortorder":"asc",
+		viewrecords: true,
+		gridComplete:function(){
+			getViewRecords();
+		},
+
+	 
+});
+	$("#CurrentReportGrid").jqGrid("navGrid");
+	$("#CurrentReportGrid").jqGrid("setFrozenColumns");
+}
+
+function getViewRecords(){
+	
+	var groups = $("#CurrentReportGrid").jqGrid("getGridParam", "groupingView").groups;
+	var loop = 0;
+	for(var i = 0;i<groups.length;i++){
+	  if(groups[i].dataIndex == "projectName"){
+	    loop++;
+	  }
+	}
+	console.log(loop+ "-------------------------------------");
+	 jQuery("#CurrentReportGrid").setGridParam({recordtext:'View 1 - '+loop+' of '+loop}).trigger("reloadGrid");
+	
+}
+
+
+function fontColorFormat(cellvalue, options, rowObject) {
+	 var red= "red";
+	 var black = "black";
+		 
+	 if(rowObject.within7dayFlag === true){
+		 var cellHtml = "<span style='color:" + red + "' originalValue='" + cellvalue + "'>" + cellvalue + "</span>";
+		 return cellHtml;
+	 }else{
+		 var cellHtml = "<span style='color:" + black + "' originalValue='" + cellvalue + "'>" + cellvalue + "</span>";
+		 return cellHtml;
+	 }
+}
+
+function searchprojectDetails(){
+	
+	var Start_date = $('#projectStartDate').val();
+	var End_date = $('#projectEndDate').val();
+	var projectName = $('#currentProjectName').val();
+	var projectStatus = $('#projectStatus').val();
+	
+	if((Start_date != "" && Start_date != null) || (End_date != "" && End_date != null)){
+		if(End_date == ""  || End_date == null){
+			$('#validate').validator('validate');
+			return;
+		}else if(Start_date == "" || Start_date == null){
+			$('#validate').validator('validate');
+			return;
+		}
+	}
+	$("#CurrentReportGrid").jqGrid('setGridParam',
+		{		
+			postData:{
+				startDate: Start_date, 
+				endDate : End_date,
+				projectName : projectName,
+				projectStatus : projectStatus
+			},
+			datatype:'json',
+			}
+	).trigger("reloadGrid");
+
+}
+
+
+/*function getReportDetails(projectId){
+
+var R = $("<form method='GET' action='/reportDetails'></form>");
+R.html('<input type ="hidden" name="id" value = "' +projectId+ '" />')
+R.appendTo($('body'));
+R.submit();
+
+alert(report projectId);
+alert(projectId);
+
+$('#reporterStudyUpdateAuditTrail').find('tr').remove();
+$('#reporterStudyUpdateAuditTrail').find('div').remove();
+
+if(projectId.reportDetailList != undefined && projectId.reportDetailList.length > 0){
+	
+	$('#ViewReportDetails').append("<div class='row'><div class='col-sm-12'><div class='panel panel-default card-view'><div class='panel-heading'><div class='pull-left'><h6 class='panel-title txt-dark'>Report Detail Table</h6>"
+								+"</div><div class='clearfix'></div></div><div class='panel-wrapper collapse in'><div class='panel-body'><div class='table-wrap'>"
+								+"<table data-toggle='table' id = 'reportDetailDiv'><thead>"
+								+"<tr><th>Project</th>"
+								+"<th>Description</th>"
+								+"<th>Created On</th>"
+								+"<th>Status</th>"
+								+"<th>Notes</th>"
+								+"<th>Progress (%)</th>"
+								+"<th>Estimated Hours</th>"
+								+"<th>Spent Hours</th>"
+								+"<th>Start Date</th>"
+								+"<th>Priority</th>"
+								+"</tr></thead>"							
+								+"<tbody id = 'reportDetailsTblDataTbody'></tbody></table>"); 
+	
+								for(var i = 0 ; i < projectId.reportDetailList.length ; i++){
+		
+								$('#reportDetailsTblDataTbody').append("<tr><td>"+data.reportDetailList[i].projectName+ "</td>"
+													+"<td>"+data.reportDetailList[i].description +"</td>"
+													+"<td>"+data.reportDetailList[i].createdOn +"</td>"
+													+"<td>"+data.reportDetailList[i].projectStatus+"</td>"
+													+"<td>"+data.reportDetailList[i].notes +"</td>"
+													+"<td>"+data.reportDetailList[i].progressPercents+"</td>"
+													+"<td>"+data.reportDetailList[i].totalEstimatedHours +"</td>"
+													+"<td>"+data.reportDetailList[i].totalSpentHours+"</td>"
+													+"<td>"+data.reportDetailList[i].projectStartDate+"</td>"
+													+"<td>"+data.reportDetailList[i].priority +"</td></tr>");
+	}
+}
+
+}*/
